@@ -2,83 +2,45 @@
 
 # update root certs
 #wget -O/etc/pki/tls/certs/ca-bundle.crt http://curl.haxx.se/ca/cacert.pem
+#!/usr/bin/env bash
+branch=${cloudstack_branch}
 
-echo xcp-networkd xcp-xapi/networking_type string openvswitch| debconf-set-selections -v
 echo mysql-server-5.5 mysql-server/root_password password password| debconf-set-selections -v
 echo mysql-server-5.5 mysql-server/root_password_again password password| debconf-set-selections -v
-apt-get install -y git vim tcpdump ebtables --no-install-recommends
-apt-get install -f -y 
-apt-get install -y openjdk-6-jdk genisoimage python-pip mysql-server nfs-kernel-server --no-install-recommends
-apt-get install -y linux-headers-3.2.0-4-686-pae xen-hypervisor-4.1-i386 xcp-xapi xcp-xe xcp-guest-templates xcp-vncterm xen-tools blktap-utils blktap-dkms qemu-keymaps qemu-utils --no-install-recommends
-apt-get install -f -y 
-apt-get install -y linux-headers-3.2.0-4-686-pae xen-hypervisor-4.1-i386 xcp-xapi xcp-xe xcp-guest-templates xcp-vncterm xen-tools blktap-utils blktap-dkms qemu-keymaps qemu-utils --no-install-recommends
-
-pip install mysql-connector-python 
-
-echo "bridge" > /etc/xcp/network.conf
-update-rc.d xendomains disable
-echo TOOLSTACK=xapi > /etc/default/xen
-sed -i 's/GRUB_DEFAULT=.\+/GRUB_DEFAULT="Xen 4.1-i386"/' /etc/default/grub
-sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="apparmor=0"\nGRUB_CMDLINE_XEN="dom0_mem=400M,max:500M dom0_max_vcpus=1"/' /etc/default/grub
-update-grub
-sed -i 's/VNCTERM_LISTEN=.\+/VNCTERM_LISTEN="-v 0.0.0.0:1"/' /usr/lib/xcp/lib/vncterm-wrapper
-cat > /usr/lib/xcp/plugins/echo << EOF
-#!/usr/bin/env python
-
-# Simple XenAPI plugin
-import XenAPIPlugin, time
-
-def main(session, args):
-    if args.has_key("sleep"):
-        secs = int(args["sleep"])
-        time.sleep(secs)
-    return "args were: %s" % (repr(args))
-
-if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"main": main})
-EOF
-
-chmod -R 777 /usr/lib/xcp
-mkdir -p /root/.ssh
-ssh-keygen -A -q
-
-cat > /etc/network/interfaces <<DONE
-auto lo
-iface lo inet loopback
-
-auto eth0
-allow-hotplug eth0
-iface eth0 inet manual
-
-iface eth1 inet manual
-
-auto xenbr0
-iface xenbr0 inet static
-        bridge_ports eth1
-        address 192.168.56.10
-        netmask 255.255.255.0
-        network 192.168.56.0
-        broadcast 192.168.56.255
-        gateway 192.168.56.1
-        dns_nameservers 8.8.8.8 8.8.4.4
-        post-up route del default gw 192.168.56.1; route add default gw 192.168.56.1 metric 100;
-
-auto xenbr1
-iface xenbr1 inet dhcp
-        bridge_ports eth0
-        dns_nameservers 8.8.8.8 8.8.4.4
-        post-up route add default gw 10.0.3.2
-DONE
-
-mkdir -p /opt/storage/secondary
-mkdir -p /opt/storage/primary
-hostuuid=`xe host-list |grep uuid|awk '{print $5}'`
-xe sr-create host-uuid=$hostuuid name-label=local-storage shared=false type=file device-config:location=/opt/storage/primary
-echo "/opt/storage/secondary *(rw,no_subtree_check,no_root_squash,fsid=0)" > /etc/exports
-#preseed systemvm template, may be copy files from devcloud's /opt/storage/secondary
-/etc/init.d/nfs-kernel-server restart
-
+apt-get update
+apt-get install -y nfs-kernel-server python-setuptools maven python-pip dnsmasq openjdk-6-jdk libmysql-java mysql-client git mysql-server-5.5 python-dev 
 mysql -u root -ppassword -e "SET PASSWORD FOR root@localhost=PASSWORD('');"
+
+echo "==== Download CS Code ===="
+repo_url='https://github.com/apache/cloudstack.git'
+
+mkdir -p /automation/cloudstack
+cd /automation/cloudstack
+git init
+git fetch $repo_url $branch:refs/remotes/origin/$branch
+git checkout 4.3.0-forward
+
+echo "==== Simulator config and start ===="
+cd /automation/cloudstack
+mvn clean install -Pdeveloper -DskipTests -Dsimulator 
+mvn -Pdeveloper -pl developer -Dsimulator -DskipTests clean install
+mvn -Pdeveloper -pl developer -Ddeploydb
+mvn -Pdeveloper -pl developer -Ddeploydb-simulator
+mysql -uroot cloud -e "update configuration set value = 'false' where name = 'router.version.check';"
+mysql -uroot cloud -e "update user set api_key = 'F0Hrpezpz4D3RBrM6CBWadbhzwQMLESawX-yMzc5BCdmjMon3NtDhrwmJSB1IBl7qOrVIT4H39PTEJoDnN-4vA' where id = 2;"
+mysql -uroot cloud -e "update user set secret_key = 'uWpZUVnqQB4MLrS_pjHCRaGQjX62BTk_HU8uiPhEShsY7qGsrKKFBLlkTYpKsg1MzBJ4qWL0yJ7W7beemp-_Ng' where id = 2;"
+cd /automation/cloudstack/tools/marvin
+python setup.py install
+
+mkdir -p /storage/secondary
+mkdir -p /storage/primary0
+mkdir -p /storage/primary1
+mkdir -p /storage/primary2
+echo "/storage/secondary *(rw,no_subtree_check,no_root_squash,fsid=0)" > /etc/exports
+echo "/storage/primary0 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/exports
+echo "/storage/primary1 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/exports
+echo "/storage/primary2 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/exports
+/etc/init.d/nfs-kernel-server restart
 
 # vagrant
 groupadd vagrant -g 4999

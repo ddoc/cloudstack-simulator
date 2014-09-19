@@ -2,31 +2,22 @@
     "builders": [
         {
             "boot_command": [
-                "<esc><wait>",
-                "install <wait>",
-                "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
-                "debian-installer=en_US <wait>",
-                "auto <wait>",
-                "locale=en_US <wait>",
-                "kbd-chooser/method=us <wait>",
-                "netcfg/get_hostname={{ .Name }} <wait>",
-                "netcfg/get_domain=vagrantup.com <wait>",
-                "fb=false <wait>",
-                "debconf/frontend=noninteractive <wait>",
-                "console-setup/ask_detect=false <wait>",
-                "console-keymaps-at/keymap=us <wait>",
-                "keyboard-configuration/xkb-keymap=us <wait>",
-                "netcfg/choose_interface=eth0 <wait>",
-                "<enter><wait>"
+                "<esc><esc><enter><wait>",
+                "/install/vmlinuz noapic preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
+                "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
+                "hostname={{ .Name }} ",
+                "fb=false debconf/frontend=noninteractive ",
+                "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA keyboard-configuration/variant=USA console-setup/ask_detect=false ",
+                "initrd=/install/initrd.gz -- <enter>"
             ],
-            "vm_name": "cloudstack-simulator",
+            "vm_name": "cloudstack-simulator-{{user `cloudstack_branch`}}",
             "disk_size": 30000,
             "headless": true,
-            "guest_os_type": "Debian",
+            "guest_os_type": "Ubuntu_64",
             "http_directory": "http",
             "iso_checksum_type": "md5",
-            "iso_url": "http://debian.cabletel.com.mk/debian-cd/7.0.0/i386/iso-cd/debian-7.0.0-i386-netinst.iso",
-            "iso_checksum": "a6b93666a5393334accb7ac4ee28d949",
+            "iso_url": "http://releases.ubuntu.com/12.04/ubuntu-12.04.4-server-amd64.iso",
+            "iso_checksum": "e83adb9af4ec0a039e6a5c6e145a34de",
             "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'vagrant'|sudo -S sh 'shutdown.sh'",
             "ssh_password": "vagrant",
             "ssh_port": 22,
@@ -34,36 +25,6 @@
             "ssh_wait_timeout": "10000s",
             "type": "virtualbox-iso",
             "vboxmanage": [
-                [
-                    "modifyvm",
-                    "{{.Name}}",
-                    "--nic2",
-                    "hostonly"
-                ],
-                [
-                    "modifyvm",
-                    "{{.Name}}",
-                    "--nictype1",
-                    "Am79C973"
-                ],
-                [
-                    "modifyvm",
-                    "{{.Name}}",
-                    "--nictype2",
-                    "Am79C973"
-                ],
-                [
-                    "controlvm",
-                    "{{.Name}}",
-                    "nicpromisc2",
-                    "allow-all"
-                ],
-                [
-                    "modifyvm",
-                    "{{.Name}}",
-                    "--hostonlyadapter2",
-                    "vboxnet0"
-                ],
                 [
                     "modifyvm",
                     "{{.Name}}",
@@ -82,6 +43,9 @@
     "provisioners": [
         {
             "type": "shell",
+            "environment_vars": [
+                "cloudstack_branch={{user `cloudstack_branch`}}"
+            ],
             "scripts": [
                 "scripts/finish.sh"
             ]
@@ -89,8 +53,11 @@
     ],
     "post-processors": [
         {
-            "output": "builds/{{.Provider}}/devcloud2.box",
+            "output": "builds/{{.Provider}}/cloudstack-simulator-{{user `cloudstack_branch`}}.box",
             "type": "vagrant"
         }
-    ]
+    ],
+    "variables": {
+        "cloudstack_branch": "4.3.0-forward"
+    }
 }
