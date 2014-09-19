@@ -12,18 +12,19 @@
             ],
             "vm_name": "cloudstack-simulator-{{user `cloudstack_branch`}}",
             "disk_size": 30000,
-            "headless": true,
             "guest_os_type": "Ubuntu_64",
             "http_directory": "http",
             "iso_checksum_type": "md5",
             "iso_url": "http://releases.ubuntu.com/12.04/ubuntu-12.04.4-server-amd64.iso",
             "iso_checksum": "e83adb9af4ec0a039e6a5c6e145a34de",
-            "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'vagrant'|sudo -S sh 'shutdown.sh'",
             "ssh_password": "vagrant",
             "ssh_port": 22,
-            "ssh_username": "root",
-            "ssh_wait_timeout": "10000s",
+            "ssh_username": "vagrant",
+            "headless": "true",
             "type": "virtualbox-iso",
+            "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+            "ssh_wait_timeout": "20m",
+            "virtualbox_version_file": ".vbox_version",
             "vboxmanage": [
                 [
                     "modifyvm",
@@ -46,6 +47,7 @@
             "environment_vars": [
                 "cloudstack_branch={{user `cloudstack_branch`}}"
             ],
+            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
             "scripts": [
                 "scripts/finish.sh"
             ]

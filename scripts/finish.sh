@@ -1,8 +1,4 @@
 #!/bin/bash
-
-# update root certs
-#wget -O/etc/pki/tls/certs/ca-bundle.crt http://curl.haxx.se/ca/cacert.pem
-#!/usr/bin/env bash
 branch=${cloudstack_branch}
 
 echo mysql-server-5.5 mysql-server/root_password password password| debconf-set-selections -v
@@ -41,6 +37,27 @@ echo "/storage/primary0 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/ex
 echo "/storage/primary1 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/exports
 echo "/storage/primary2 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/exports
 /etc/init.d/nfs-kernel-server restart
+
+# virtualbox
+# Without libdbus virtualbox would not start automatically after compile
+apt-get -y install --no-install-recommends libdbus-1-3
+
+# The netboot installs the VirtualBox support (old) so we have to remove it
+/etc/init.d/virtualbox-ose-guest-utils stop
+rmmod vboxguest
+aptitude -y purge virtualbox-ose-guest-x11 virtualbox-ose-guest-dkms virtualbox-ose-guest-utils
+aptitude -y install dkms
+
+# Install the VirtualBox guest additions
+VBOX_VERSION=$(cat /home/vagrant/.vbox_version)
+wget http://download.virtualbox.org/virtualbox/4.3.16/VBoxGuestAdditions_4.3.16.iso
+VBOX_ISO=VBoxGuestAdditions_4.3.16.iso
+mount -o loop $VBOX_ISO /mnt
+yes|sh /mnt/VBoxLinuxAdditions.run
+umount /mnt
+
+#Cleanup VirtualBox
+rm $VBOX_ISO
 
 # vagrant
 groupadd vagrant -g 4999

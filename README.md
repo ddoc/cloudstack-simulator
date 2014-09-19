@@ -2,3 +2,15 @@ cloudstack-simulator
 ====================
 
 Packer JSON and Vagrant file to start a Cloudstack simulator
+
+
+Example use:
+
+packer build -var 'cloudstack_branch=4.4' cloudstack-simulator.json 
+
+This will start an Ubuntu 12.04 from iso and install and build cloudstack from source.
+
+will output a box file in ./builds/virtualbox/
+
+
+
