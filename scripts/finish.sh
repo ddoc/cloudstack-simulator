@@ -49,15 +49,11 @@ aptitude -y purge virtualbox-ose-guest-x11 virtualbox-ose-guest-dkms virtualbox-
 aptitude -y install dkms
 
 # Install the VirtualBox guest additions
-VBOX_VERSION=$(cat /home/vagrant/.vbox_version)
-wget http://download.virtualbox.org/virtualbox/4.3.16/VBoxGuestAdditions_4.3.16.iso
-VBOX_ISO=VBoxGuestAdditions_4.3.16.iso
-mount -o loop $VBOX_ISO /mnt
-yes|sh /mnt/VBoxLinuxAdditions.run
-umount /mnt
-
-#Cleanup VirtualBox
-rm $VBOX_ISO
+mkdir -p /mnt/virtualbox
+mount -o loop /home/vagrant/VBoxGuest*.iso /mnt/virtualbox
+yes|sh /mnt/virtualbox/VBoxLinuxAdditions.run
+umount /mnt/virtualbox
+rm -rf /home/vagrant/VBoxGuest*.iso
 
 # vagrant
 groupadd vagrant -g 4999

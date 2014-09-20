@@ -12,5 +12,9 @@ This will start an Ubuntu 12.04 from iso and install and build cloudstack from s
 
 will output a box file in ./builds/virtualbox/
 
+vagrant up
+
+will start the vm and create a zone on the simulator
+
 
 
