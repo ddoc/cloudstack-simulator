@@ -10,7 +10,7 @@
                 "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA keyboard-configuration/variant=USA console-setup/ask_detect=false ",
                 "initrd=/install/initrd.gz -- <enter>"
             ],
-            "vm_name": "cloudstack-simulator-{{user `cloudstack_branch`}}",
+            "vm_name": "cloudstack-simulator-{{user `cloudstack_branch`}}-{{timestamp}}",
             "disk_size": 30000,
             "guest_os_type": "Ubuntu_64",
             "http_directory": "http",
@@ -55,7 +55,7 @@
     ],
     "post-processors": [
         {
-            "output": "builds/{{.Provider}}/cloudstack-simulator-{{user `cloudstack_branch`}}.box",
+            "output": "builds/{{.Provider}}/cloudstack-simulator-{{user `cloudstack_branch`}}-{{timestamp}}.box",
             "type": "vagrant"
         }
     ],
