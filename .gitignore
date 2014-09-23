@@ -3,3 +3,4 @@ packer_cache
 builds
 build-*
 output-*
+cloudstack-simulator.log
