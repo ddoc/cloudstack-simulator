@@ -40,8 +40,6 @@ echo "/storage/primary2 *(rw,no_subtree_check,no_root_squash,fsid=0)" >> /etc/ex
 apt-get -y install --no-install-recommends libdbus-1-3
 
 # The netboot installs the VirtualBox support (old) so we have to remove it
-/etc/init.d/virtualbox-ose-guest-utils stop
-rmmod vboxguest
 aptitude -y purge virtualbox-ose-guest-x11 virtualbox-ose-guest-dkms virtualbox-ose-guest-utils
 aptitude -y install dkms
 
@@ -71,7 +69,7 @@ chown -R vagrant /home/vagrant/.ssh
 chmod -R go-rwsx /home/vagrant/.ssh
 
 # init script
-cat > /etc/init.d/cloudstack-simulator <<SCRIPT
+cat > /etc/init.d/cloudstack-simulator <<'SCRIPT'
 #!/bin/bash
 #
 # cloudstack-simulator CloudStack Simulator
@@ -109,7 +107,8 @@ exit 0
 
 SCRIPT
 chmod +x /etc/init.d/cloudstack-simulator
-/etc/init.d/cloudstack-simulator start
+cd /automation/cloudstack
+nohup mvn -Dnet.sf.ehcache.disabled=true -Dsimulator -pl client jetty:run &
 while ! nc -vz localhost 8080; do sleep 10; done # Wait for CloudStack to start
 mysql -uroot cloud -e "update configuration set value = 'false' where name = 'router.version.check';"
 mysql -uroot cloud -e "update user set api_key = 'F0Hrpezpz4D3RBrM6CBWadbhzwQMLESawX-yMzc5BCdmjMon3NtDhrwmJSB1IBl7qOrVIT4H39PTEJoDnN-4vA' where id = 2;"
@@ -120,6 +119,8 @@ mysql -uroot cloud -e "update user set secret_key = 'uWpZUVnqQB4MLrS_pjHCRaGQjX6
 ln -s /usr/lib/insserv/insserv /sbin/insserv
 chkconfig --level 345 cloudstack-simulator on
 chkconfig --level 345 mysql on
+
+sudo apt-get clean
 
 dd if=/dev/zero of=/EMPTY bs=1M
 rm -f /EMPTY
