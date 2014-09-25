@@ -17,7 +17,7 @@ cd /automation/cloudstack
 nohup mvn -pl client jetty:run -Dsimulator &
 
 # Deploy zone
-while ! nc -vz localhost 8080; do sleep 10; done # Wait for CloudStack to start
+while ! nc -vz localhost 8080 2>/dev/null; do sleep 10; done # Wait for CloudStack to start
 unset MAVEN_OPTS
 mvn -Pdeveloper,marvin.setup -Dmarvin.config=../../vagrant/simulator-advanced.cfg -pl :cloud-marvin integration-test
 
