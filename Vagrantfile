@@ -16,7 +16,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 # set this to the location of your nfs secondary storage
 # example: NFSSHARE=10.10.10.10:/xenshare
 NFSSHARE=10.10.10.10:/xenshare
+# ALSO, update the following line with the routable IP of your computer
+mysql -uroot cloud -e "update configuration set value = '10.10.10.10' where name = 'host';"
 
+mysql -uroot cloud -e "update configuration set value = 'true' where name = 'system.vm.use.local.storage';"
+mysql -uroot cloud -e "update configuration set value = 'false' where name = 'router.version.check';"
+
+# restart cloudstack so these changes take effect
 /etc/init.d/cloudstack-simulator restart
 
 # vhd-util
