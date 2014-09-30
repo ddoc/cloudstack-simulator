@@ -41,6 +41,7 @@ SCRIPT
   config.vm.define "cloudstack" do |cloudstack|
     cloudstack.vm.boot_timeout = 600
     cloudstack.vm.network "forwarded_port", guest: 8080, host: 8080
+    cloudstack.vm.network "forwarded_port", guest: 8250, host: 8250 
     cloudstack.vm.box = "bgalura/cloudstack-simulator4_3_forward"
     cloudstack.vm.provision :shell, inline: $cloudstackscript 
     cloudstack.vm.provider "virtualbox" do |v|
