@@ -13,8 +13,23 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   $cloudstackscript = <<SCRIPT
 #!/usr/bin/env bash
+# set this to the location of your nfs secondary storage
+# example: NFSSHARE=10.10.10.10:/xenshare
+NFSSHARE=10.10.10.10:/xenshare
+
+/etc/init.d/cloudstack-simulator restart
+
+# vhd-util
+cd /automation/cloudstack/scripts/vm/hypervisor/xenserver
+wget http://download.cloud.com.s3.amazonaws.com/tools/vhd-util
+chmod +x vhd-util
+
+# Create Xenserver tmplt
 cd /automation/cloudstack
-nohup mvn -pl client jetty:run -Dsimulator &
+mkdir -p /etc/cloudstack/management
+cp utils/conf/db.properties /etc/cloudstack/management
+echo trying to mount sec storage: ${NFSSHARE}
+mount ${NFSSHARE} /mnt && /automation/cloudstack/scripts/storage/secondary/cloud-install-sys-tmplt -F -m /mnt -u http://d21ifhcun6b1t2.cloudfront.net/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2 -h xenserver && umount /mnt
 
 # Deploy zone
 while ! nc -vz localhost 8080 2>/dev/null; do sleep 10; done # Wait for CloudStack to start
